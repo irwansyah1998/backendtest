@@ -8,7 +8,7 @@ use OpenApi\Annotations as OA;
  * @OA\OpenApi(
  *     @OA\Info(
  *         title="Library API",
- *         version="1.0.1",
+ *         version="1.0.5",
  *         description="API documentation",
  *         @OA\Contact(
  *             name="Indra Gunawan Ardiansyah",

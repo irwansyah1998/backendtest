@@ -7,7 +7,7 @@
             "name": "Indra Gunawan Ardiansyah",
             "email": "nigun1998@gmail.com"
         },
-        "version": "1.0.1"
+        "version": "1.0.5"
     },
     "paths": {
         "/api/books/borrow": {
@@ -99,7 +99,10 @@
                 "operationId": "9c48fe33510362b8a8a85248cc96ee28",
                 "responses": {
                     "200": {
-                        "description": "List of books"
+                        "description": "List of books with available quantities"
+                    },
+                    "500": {
+                        "description": "Server error"
                     }
                 }
             }
@@ -107,7 +110,7 @@
         "/api/members": {
             "get": {
                 "tags": [
-                    "Books"
+                    "Members"
                 ],
                 "summary": "Check all members",
                 "operationId": "0b7f8b0217e2992d11e20aae3e3f7414",
@@ -123,6 +126,10 @@
         {
             "name": "Books",
             "description": "Books"
+        },
+        {
+            "name": "Members",
+            "description": "Members"
         }
     ]
 }

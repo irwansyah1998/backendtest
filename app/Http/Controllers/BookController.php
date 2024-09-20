@@ -7,7 +7,7 @@ use App\Models\Member;
 use App\Models\Book;
 use App\Models\Borrowing;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller; // IMPORT CONTROLLER
+use App\Http\Controllers\Controller;
 
 class BookController extends Controller
 {
@@ -42,9 +42,18 @@ class BookController extends Controller
             return response()->json(['message' => 'Member not found'], 404);
         }
 
-        // Cek apakah member sedang dikenakan penalti atau sudah meminjam 2 buku
-        if ($member->borrowings()->count() >= 2 || $member->is_penalized) {
-            return response()->json(['message' => 'You cannot borrow more than 2 books or you are penalized.'], 400);
+        // Cek apakah member sedang dikenakan penalti
+        if ($member->is_penalized && now()->lessThan($member->penalty_until)) {
+            return response()->json(['message' => 'You are under penalty and cannot borrow books for 3 days.'], 400);
+        }
+
+        // Cek jumlah buku yang sedang dipinjam oleh member
+        $borrowedCount = Borrowing::where('member_id', $member->id)
+            ->whereNull('returned_at') // Pastikan hanya yang belum dikembalikan
+            ->count();
+
+        if ($borrowedCount >= 2) {
+            return response()->json(['message' => 'You cannot borrow more than 2 books.'], 400);
         }
 
         // Cari buku berdasarkan ID
@@ -85,14 +94,20 @@ class BookController extends Controller
      */
     public function returnBook(Request $request)
     {
+        // Validasi input
+        $request->validate([
+            'member_id' => 'required|string',
+            'book_id' => 'required|string',
+        ]);
+
         // Cari member berdasarkan ID
-        $member = Member::find($request->member_id);
+        $member = Member::where('code', $request->member_id)->first();
         if (!$member) {
             return response()->json(['message' => 'Member not found'], 404);
         }
 
         // Cari buku berdasarkan ID
-        $book = Book::find($request->book_id);
+        $book = Book::where('code', $request->book_id)->first();
         if (!$book) {
             return response()->json(['message' => 'Book not found'], 404);
         }
@@ -100,6 +115,7 @@ class BookController extends Controller
         // Periksa apakah member telah meminjam buku ini
         $borrowing = Borrowing::where('member_id', $member->id)
             ->where('book_id', $book->id)
+            ->whereNull('returned_at') // Pastikan hanya yang belum dikembalikan
             ->first();
 
         if (!$borrowing) {
@@ -109,13 +125,16 @@ class BookController extends Controller
         // Hitung lama peminjaman
         $daysBorrowed = now()->diffInDays($borrowing->borrowed_at);
         if ($daysBorrowed > 7) {
-            // Penalti jika dikembalikan setelah lebih dari 7 hari
             $member->is_penalized = true;
+            $member->penalty_until = now()->addDays(3);
             $member->save();
         }
 
-        // Hapus catatan peminjaman dan tambahkan kembali stok buku
-        $borrowing->delete();
+        // Tandai buku sebagai dikembalikan
+        $borrowing->returned_at = now();
+        $borrowing->save();
+
+        // Tambahkan kembali stok buku
         $book->increment('stock');
 
         return response()->json(['message' => 'Book returned successfully.']);
@@ -126,13 +145,24 @@ class BookController extends Controller
      *     path="/api/books",
      *     summary="Check all books",
      *     tags={"Books"},
-     *     @OA\Response(response="200", description="List of books"),
+     *     @OA\Response(response="200", description="List of books with available quantities"),
+     *     @OA\Response(response="500", description="Server error")
      * )
      */
     public function checkBooks()
     {
-        // Ambil semua buku dan tampilkan stok
-        $books = Book::all();
+        // Ambil semua buku dan tampilkan stok yang tidak sedang dipinjam
+        $books = Book::withCount(['borrowings' => function ($query) {
+            $query->whereNull('returned_at'); // Hanya hitung yang belum dikembalikan
+        }])->get()->map(function ($book) {
+            return [
+                'id' => $book->id,
+                'code' => $book->code,
+                'title' => $book->title,
+                'available_stock' => $book->stock - $book->borrowings_count, // Mengurangi dengan jumlah yang sedang dipinjam
+            ];
+        });
+
         return response()->json($books);
     }
 
@@ -140,7 +170,7 @@ class BookController extends Controller
      * @OA\Get(
      *     path="/api/members",
      *     summary="Check all members",
-     *     tags={"Books"},
+     *     tags={"Members"},
      *     @OA\Response(response="200", description="List of members with borrowed books count"),
      * )
      */
@@ -149,5 +179,10 @@ class BookController extends Controller
         // Ambil semua anggota dan jumlah buku yang sedang dipinjam
         $members = Member::withCount('borrowings')->get();
         return response()->json($members);
+    }
+
+    public function Debug()
+    {
+        return response()->json(['message' => 'Debug endpoint hit successfully']);
     }
 }
