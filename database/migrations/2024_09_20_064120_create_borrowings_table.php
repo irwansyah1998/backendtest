@@ -13,8 +13,14 @@ return new class extends Migration
     {
         Schema::create('borrowings', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('member_id')->constrained();
+            $table->foreignId('book_id')->constrained();
+            $table->date('borrowed_at');
+            $table->date('returned_at')->nullable();
+            $table->boolean('is_penalized')->default(false);
             $table->timestamps();
         });
+        
     }
 
     /**
