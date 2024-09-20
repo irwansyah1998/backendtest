@@ -1,0 +1,128 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Library API",
+        "description": "API documentation",
+        "contact": {
+            "name": "Indra Gunawan Ardiansyah",
+            "email": "nigun1998@gmail.com"
+        },
+        "version": "1.0.1"
+    },
+    "paths": {
+        "/api/books/borrow": {
+            "post": {
+                "tags": [
+                    "Books"
+                ],
+                "summary": "Borrow a book",
+                "operationId": "1bee54b41603609b59647b0b4017e092",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "member_id": {
+                                        "type": "string",
+                                        "example": "M001"
+                                    },
+                                    "book_id": {
+                                        "type": "string",
+                                        "example": "JK-45"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Book borrowed successfully"
+                    },
+                    "404": {
+                        "description": "Member not found"
+                    },
+                    "400": {
+                        "description": "Book is not available or you cannot borrow more than 2 books"
+                    }
+                }
+            }
+        },
+        "/api/books/return": {
+            "post": {
+                "tags": [
+                    "Books"
+                ],
+                "summary": "Return a borrowed book",
+                "operationId": "e6f4df9aba674d917b12d3a09067eae6",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "member_id": {
+                                        "type": "string",
+                                        "example": "M001"
+                                    },
+                                    "book_id": {
+                                        "type": "string",
+                                        "example": "JK-45"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Book returned successfully"
+                    },
+                    "404": {
+                        "description": "Member or book not found"
+                    },
+                    "400": {
+                        "description": "This book was not borrowed by the member"
+                    }
+                }
+            }
+        },
+        "/api/books": {
+            "get": {
+                "tags": [
+                    "Books"
+                ],
+                "summary": "Check all books",
+                "operationId": "9c48fe33510362b8a8a85248cc96ee28",
+                "responses": {
+                    "200": {
+                        "description": "List of books"
+                    }
+                }
+            }
+        },
+        "/api/members": {
+            "get": {
+                "tags": [
+                    "Books"
+                ],
+                "summary": "Check all members",
+                "operationId": "0b7f8b0217e2992d11e20aae3e3f7414",
+                "responses": {
+                    "200": {
+                        "description": "List of members with borrowed books count"
+                    }
+                }
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Books",
+            "description": "Books"
+        }
+    ]
+}
